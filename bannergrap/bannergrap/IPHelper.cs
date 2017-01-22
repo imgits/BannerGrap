@@ -66,8 +66,15 @@ namespace bannergrap
             return ip32;
         }
 
-        public static IPAddress Address(UInt32 ip)
+        public static IPAddress AddressN(UInt32 ip)
         {
+            IPAddress ipaddr = new IPAddress(ip);
+            return ipaddr;
+        }
+
+        public static IPAddress AddressH(UInt32 ip)
+        {
+            ip = htonl(ip);
             IPAddress ipaddr = new IPAddress(ip);
             return ipaddr;
         }

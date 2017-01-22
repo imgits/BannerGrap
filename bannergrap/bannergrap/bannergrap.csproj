@@ -43,11 +43,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BannerGrapper.cs" />
+    <Compile Include="FtpScanner.cs" />
+    <Compile Include="HttpScanner.cs" />
     <Compile Include="IPHelper.cs" />
     <Compile Include="IPList.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Scanner.cs" />
+    <Compile Include="BannerScanner.cs" />
+    <Compile Include="TcpScanner.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
