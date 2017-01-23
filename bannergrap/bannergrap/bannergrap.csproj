@@ -45,6 +45,9 @@
     <Compile Include="BannerGrapper.cs" />
     <Compile Include="FtpScanner.cs" />
     <Compile Include="HttpScanner.cs" />
+    <Compile Include="HttpsScanne.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="IPHelper.cs" />
     <Compile Include="IPList.cs" />
     <Compile Include="Program.cs" />

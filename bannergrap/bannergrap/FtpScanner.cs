@@ -10,7 +10,7 @@ namespace bannergrap
 {
     class FtpScanner : IDisposable
     {
-        WebResponse   FtpResponse = null;
+        FtpWebResponse FtpResponse = null;
         public bool   Connect(UInt32 ip, UInt16 port, int timeout)
         {
             string url = "ftp://" + IPHelper.ntoa(ip) + "/";
@@ -21,11 +21,26 @@ namespace bannergrap
                 ftp.UseBinary = true;
                 ftp.Credentials = new NetworkCredential("anonymous", "janeDoe@contoso.com");
                 ftp.Method = WebRequestMethods.Ftp.ListDirectory;
-                FtpResponse = ftp.GetResponse();
+                ftp.Timeout = timeout;
+                ftp.ReadWriteTimeout = timeout;
+                FtpResponse = (FtpWebResponse)ftp.GetResponse();
                 return true;
             }
-            catch(Exception ex)
+            catch(WebException ex)
             {
+                if (ex.Status == WebExceptionStatus.ProtocolError && ex.Response!=null)
+                {
+                    FtpResponse = (FtpWebResponse)ex.Response;
+                    return true;
+                }
+            }
+            catch(InvalidOperationException ex)
+            {
+
+            }
+            catch (Exception ex)
+            {
+                return false;
             }
             return false;
         }
@@ -33,13 +48,28 @@ namespace bannergrap
         public string GetBanner(int timeout)
         {
             StringBuilder banner = new StringBuilder();
+            if (FtpResponse.BannerMessage!=null)
+            {
+                banner.Append(FtpResponse.BannerMessage);
+            }
+            if (FtpResponse.StatusDescription != null)
+            {
+                banner.Append(FtpResponse.StatusDescription);
+            }
             using (StreamReader reader = new StreamReader(FtpResponse.GetResponseStream(), Encoding.Default))
             {
-                string line = reader.ReadLine();
-                while (line != null)
+                try
                 {
-                    banner.Append(line);
-                    line = reader.ReadLine();
+                    string line = reader.ReadLine();
+                    while (line != null)
+                    {
+                        banner.Append(line);
+                        line = reader.ReadLine();
+                    }
+                }
+                catch(Exception ex)
+                {
+                    banner.Append(ex.Message);
                 }
             }
             return banner.ToString();

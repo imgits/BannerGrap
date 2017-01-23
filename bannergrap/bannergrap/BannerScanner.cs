@@ -132,7 +132,15 @@ namespace bannergrap
 
         void HttpScan(UInt32 ip, UInt16 port)
         {
-
+            //TcpScan(ip, port);
+            using (HttpScanner scanner = new HttpScanner())
+            {
+                if (scanner.Connect(ip, port, Timeout))
+                {
+                    string banner = scanner.GetBanner(Timeout);
+                    OutputBanner(ip, port, banner);
+                }
+            }
         }
 
         void Pop3Scan(UInt32 ip, UInt16 port)
@@ -142,7 +150,14 @@ namespace bannergrap
 
         void HttpsScan(UInt32 ip, UInt16 port)
         {
-
+            using (HttpScanner scanner = new HttpScanner())
+            {
+                if (scanner.Connect(ip, port, Timeout,true))
+                {
+                    string banner = scanner.GetBanner(Timeout);
+                    OutputBanner(ip, port, banner);
+                }
+            }
         }
 
 
