@@ -93,7 +93,7 @@ namespace bannergrap
                 }
                 using (System.IO.StreamReader reader = new System.IO.StreamReader(ResponseStream, encoding))
                 {
-                    string body = reader..ReadToEnd();
+                    string body = reader.ReadToEnd();
                     banner.Append(body);
                 }
             }

@@ -10,15 +10,17 @@ namespace bannergrap
 {
     class TcpScanner : TcpClient
     {
-        public bool Connect(UInt32 ip, UInt16 port, int timeout)
+        virtual public bool Connect(UInt32 ip, UInt16 port, int timeout)
         {
+            //ip = 0x7f000001;
             IPAddress hostname = IPHelper.AddressH(ip);
+            
             var result = BeginConnect(hostname, port, null, null);
             result.AsyncWaitHandle.WaitOne(timeout);
             return (result.IsCompleted && Connected);
         }
 
-        public string GetBanner(int timeout)
+        virtual public string GetBanner(int timeout)
         {
             this.ReceiveTimeout = timeout;
             using (NetworkStream ns = GetStream())

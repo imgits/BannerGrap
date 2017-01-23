@@ -72,16 +72,16 @@ namespace bannergrap
             {
                 switch(item.port)
                 {
-                    case 21:    FtpScan(item.ip, item.port);    break;
-                    case 22:    SshScan(item.ip, item.port);    break;
-                    case 23:    TelnetScan(item.ip, item.port); break;
-                    case 25:    SmtpScan(item.ip, item.port);   break;
-                    case 80:    HttpScan(item.ip, item.port);   break;
-                    case 110:   Pop3Scan(item.ip, item.port);   break;
-                    case 443:   HttpsScan(item.ip, item.port);  break;
-                    default:
-                        TcpScan(item.ip, item.port);
-                        break;
+                    //case 21:    FtpScan(item.ip, item.port);    break;
+                    //case 22:    SshScan(item.ip, item.port);    break;
+                    //case 23:    TelnetScan(item.ip, item.port); break;
+                    //case 25:    SmtpScan(item.ip, item.port);   break;
+                    //case 80:    HttpScan(item.ip, item.port);   break;
+                    //case 110:   Pop3Scan(item.ip, item.port);   break;
+                    //case 443:   HttpsScan(item.ip, item.port);  break;
+                    case 3306:  MysqlScan(item.ip, item.port); break;
+                        //TcpScan(item.ip, item.port); break;
+                        //default:      TcpScan(item.ip, item.port);    break;
                 }
                 if (ScanCancellationToken.IsCancellationRequested) break;
                 item = GetNextItem();
@@ -155,6 +155,17 @@ namespace bannergrap
                 if (scanner.Connect(ip, port, Timeout,true))
                 {
                     string banner = scanner.GetBanner(Timeout);
+                    OutputBanner(ip, port, banner);
+                }
+            }
+        }
+        void MysqlScan(UInt32 ip, UInt16 port)
+        {
+            using (MysqlClient client = new MysqlClient())
+            {
+                if (client.Connect(ip, port, Timeout))
+                {
+                    string banner = client.GetBanner(Timeout);
                     OutputBanner(ip, port, banner);
                 }
             }
