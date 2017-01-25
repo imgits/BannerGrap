@@ -11,8 +11,11 @@ namespace bannergrap
     class FtpScanner : IDisposable
     {
         FtpWebResponse FtpResponse = null;
-        public bool   Connect(UInt32 ip, UInt16 port, int timeout)
+        FtpBanner banner = null;
+        public FtpBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
+            //ip = IPHelper.aton("1.53.59.39");
+            banner = new FtpBanner(ip, port);
             string url = "ftp://" + IPHelper.ntoa(ip) + "/";
             try
             {
@@ -24,55 +27,30 @@ namespace bannergrap
                 ftp.Timeout = timeout;
                 ftp.ReadWriteTimeout = timeout;
                 FtpResponse = (FtpWebResponse)ftp.GetResponse();
-                return true;
             }
             catch(WebException ex)
             {
-                if (ex.Status == WebExceptionStatus.ProtocolError && ex.Response!=null)
-                {
-                    FtpResponse = (FtpWebResponse)ex.Response;
-                    return true;
-                }
-            }
-            catch(InvalidOperationException ex)
-            {
-
+                FtpResponse = (FtpWebResponse)ex.Response;
+                
             }
             catch (Exception ex)
             {
-                return false;
+                
             }
-            return false;
-        }
-
-        public string GetBanner(int timeout)
-        {
-            StringBuilder banner = new StringBuilder();
-            if (FtpResponse.BannerMessage!=null)
+            if (FtpResponse == null) return null;
+            banner.welcome = FtpResponse.BannerMessage;
+            switch(FtpResponse.StatusCode)
             {
-                banner.Append(FtpResponse.BannerMessage);
+                case FtpStatusCode.DataAlreadyOpen:
+                case FtpStatusCode.OpeningData:
+                    banner.anonymous = true;
+                    break;
+                default:
+                    banner.anonymous = false;
+                    break;
             }
-            if (FtpResponse.StatusDescription != null)
-            {
-                banner.Append(FtpResponse.StatusDescription);
-            }
-            using (StreamReader reader = new StreamReader(FtpResponse.GetResponseStream(), Encoding.Default))
-            {
-                try
-                {
-                    string line = reader.ReadLine();
-                    while (line != null)
-                    {
-                        banner.Append(line);
-                        line = reader.ReadLine();
-                    }
-                }
-                catch(Exception ex)
-                {
-                    banner.Append(ex.Message);
-                }
-            }
-            return banner.ToString();
+            banner.message = FtpResponse.StatusDescription + FtpResponse.WelcomeMessage;
+            return banner;
         }
 
         public void Dispose()
