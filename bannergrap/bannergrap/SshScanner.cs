@@ -8,10 +8,10 @@ using Renci.SshNet.Security;
 
 namespace bannergrap
 {
-    class SshScanner : IDisposable
+    class SshScanner : IBannerScanner, IDisposable
     {
         SshBanner banner = null;
-        public SshBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
+        public BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
             banner = new SshBanner(ip, port);
             string host = IPHelper.ntoa(ip);

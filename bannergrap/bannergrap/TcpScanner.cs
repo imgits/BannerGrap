@@ -8,9 +8,8 @@ using System.Net.Sockets;
 
 namespace bannergrap
 {
-    class TcpScanner : TcpClient
+    class TcpScanner : TcpClient , IBannerScanner
     {
-        BannerBase banner = null;
         protected bool Connect(UInt32 ip, UInt16 port, int timeout)
         {
             IPAddress hostname = IPHelper.AddressH(ip);
@@ -24,11 +23,11 @@ namespace bannergrap
             return false;
         }
 
-        public BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout)
+        virtual public BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
             if (!Connect(ip, port, timeout)) return null;
-            IPAddress hostname = IPHelper.AddressH(ip);
-            banner = new BannerBase(ip, port,"TCP");
+
+            TcpBanner banner = new TcpBanner(ip, port);
             try
             {
                 this.ReceiveTimeout = timeout;
@@ -38,9 +37,9 @@ namespace bannergrap
                     int size = ns.Read(buffer, 0, buffer.Length);
                     if (size > 0)
                     {
-                        banner.raw_data = new byte[size];
-                        Buffer.BlockCopy(buffer, 0, banner.raw_data, 0, size);
-                        banner.text = Encoding.ASCII.GetString(buffer, 0, size);
+                        banner.banner_data = new byte[size];
+                        Buffer.BlockCopy(buffer, 0, banner.banner_data, 0, size);
+                        banner.banner_text = Encoding.ASCII.GetString(buffer, 0, size);
                     }
                 }
             }

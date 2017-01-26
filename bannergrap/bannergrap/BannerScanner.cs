@@ -25,6 +25,7 @@ namespace bannergrap
         IMongoDatabase mongodb_banners=null;
         IMongoCollection<FtpBanner> table_ftp = null;
         IMongoCollection<SshBanner> table_ssh = null;
+        IMongoCollection<BannerBase> table_tcp = null;
         DateTime task_id = DateTime.Now;
         public void AddItem(UInt32 ip, UInt16 port)
         {
@@ -55,6 +56,8 @@ namespace bannergrap
             mongodb_banners = mongo_client.GetDatabase("banners");
             table_ftp = mongodb_banners.GetCollection<FtpBanner>("ftp");
             table_ssh = mongodb_banners.GetCollection<SshBanner>("ssh");
+            table_tcp = mongodb_banners.GetCollection<BannerBase>("tcp");
+            //ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
             Timeout = timeout;
             CancellationTokenSource cts = new CancellationTokenSource();
@@ -75,42 +78,46 @@ namespace bannergrap
         void PortScanThread(object oid)
         {
             int tid = (int)oid;
+            Dictionary<int, IBannerScanner> Scanners = new Dictionary<int, IBannerScanner>();
+            Scanners[21]  = new TcpScanner();
+            Scanners[22]  = new SshScanner();
+            Scanners[23]  = new TelnetScanner();
+            //Scanners[25]  = new SnmpScanner();
+            //Scanners[53]  = new DnsScanner();
+            //Scanners[80]  = new HttpScanner();
+            //Scanners[110]  = new Pop3Scanner();
+            //Scanners[443]  = new HttpsScanner();
+            //Scanners[1436]  = new MssqlScanner();
+            //Scanners[3306]  = new MysqlScanner();
+            //Scanners[3389]  = new RdpScanner();
+            //Scanners[4899]  = new RadminScanner();
+
+            IBannerScanner scanner = null;
+
             ScanItem item = GetNextItem();
             while (item != null)
             {
+                Console.WriteLine("Scanning " + IPHelper.ntoa(item.ip) + ":" + item.port);
                 switch(item.port)
                 {
+                    //case 21: scanner = ftp_scanner;break;
                     //case 21:    FtpScan(item.ip, item.port);    break;
                     //case 22:    SshScan(item.ip, item.port);    break;
                     //case 23:    TelnetScan(item.ip, item.port); break;
                     //case 25:    SmtpScan(item.ip, item.port);   break;
-                    case 80:    HttpScan(item.ip, item.port);   break;
+                    //case 80:    HttpScan(item.ip, item.port);   break;
                     //case 110:   Pop3Scan(item.ip, item.port);   break;
                     //case 443:   HttpsScan(item.ip, item.port);  break;
                     //case 3306:  MysqlScan(item.ip, item.port); break;
                         //TcpScan(item.ip, item.port); break;
-                        //default:      TcpScan(item.ip, item.port);    break;
+                    default:      TcpScan(item.ip, item.port);    break;
                 }
                 if (ScanCancellationToken.IsCancellationRequested) break;
                 item = GetNextItem();
             }
         }
 
-        //void ScanBanner<ScannerType, BannerType>(UInt32 ip, UInt16 port,string TableName) where ScannerType:new()
-        //{
-        //    ScannerType scanner = new ScannerType();
-        //    {
-        //        BannerType banner = scanner.GetBanner(ip, port, Timeout);
-        //        if (banner != null)
-        //        {
-        //            banner.task_id = task_id;
-        //            //table_tcp.InsertOneAsync(banner);
-        //            OutputBanner(ip, port, banner);
-        //        }
-        //    }
-        //}
-
-        void TcpScan(UInt32 ip, UInt16 port)
+         void TcpScan(UInt32 ip, UInt16 port)
         {
             using (TcpScanner scanner = new TcpScanner())
             {
@@ -118,7 +125,7 @@ namespace bannergrap
                 if (banner !=null)
                 {
                     banner.task_id = task_id;
-                    //table_tcp.InsertOneAsync(banner);
+                    table_tcp.InsertOneAsync(banner);
                     OutputBanner(ip, port, banner);
                 }
             }
@@ -128,11 +135,11 @@ namespace bannergrap
         {
             using (FtpScanner scanner = new FtpScanner())
             {
-                FtpBanner banner  = scanner.GetBanner(ip, port, Timeout);
+                BannerBase banner  = scanner.GetBanner(ip, port, Timeout);
                 if (banner != null)
                 {
                     banner.task_id = task_id;
-                    table_ftp.InsertOneAsync(banner);
+                    //table_ftp.InsertOneAsync(banner);
                     OutputBanner(ip, port, banner);
                 }
             }
@@ -142,11 +149,11 @@ namespace bannergrap
         {
             using (SshScanner scanner = new SshScanner())
             {
-                SshBanner banner = scanner.GetBanner(ip, port, Timeout);
+                BannerBase banner = scanner.GetBanner(ip, port, Timeout);
                 if (banner != null)
                 {
                     banner.task_id = task_id;
-                    table_ssh.InsertOneAsync(banner);
+                    //table_ssh.InsertOneAsync(banner);
                     OutputBanner(ip, port, banner);
                 }
             }
@@ -156,7 +163,7 @@ namespace bannergrap
         {
             using (TelnetScanner scanner = new TelnetScanner())
             {
-                TelnetBanner banner = scanner.GetBanner(ip, port, Timeout);
+                BannerBase banner = scanner.GetBanner(ip, port, Timeout);
                 if (banner != null)
                 {
                     banner.task_id = task_id;
@@ -173,7 +180,6 @@ namespace bannergrap
 
         void HttpScan(UInt32 ip, UInt16 port)
         {
-            //TcpScan(ip, port);
             using (HttpScanner scanner = new HttpScanner())
             {
                 HttpBanner banner = scanner.GetBanner(ip, port, Timeout);
@@ -193,15 +199,19 @@ namespace bannergrap
 
         void HttpsScan(UInt32 ip, UInt16 port)
         {
-            using (HttpScanner scanner = new HttpScanner())
+            using (HttpsScanner scanner = new HttpsScanner())
             {
-                //if (scanner.Connect(ip, port, Timeout,true))
-                //{
-                //    string banner = scanner.GetBanner(Timeout);
-                //    OutputBanner(ip, port, banner);
-                //}
+                HttpsBanner banner = scanner.GetBanner(ip, port, Timeout);
+                if (banner != null)
+                {
+                    banner.task_id = task_id;
+                    //table_ssh.InsertOneAsync(banner);
+                    OutputBanner(ip, port, banner);
+                }
             }
         }
+
+
         void MysqlScan(UInt32 ip, UInt16 port)
         {
             using (MysqlScanner client = new MysqlScanner())

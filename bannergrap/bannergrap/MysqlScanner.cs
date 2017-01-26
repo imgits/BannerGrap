@@ -92,8 +92,8 @@ namespace bannergrap
                     }
                     if (read_bytes > 0)
                     {
-                        banner.raw_data = new byte[read_bytes];
-                        Buffer.BlockCopy(buffer, 0, banner.raw_data, 0, read_bytes);
+                        //banner.raw_data = new byte[read_bytes];
+                        //Buffer.BlockCopy(buffer, 0, banner.raw_data, 0, read_bytes);
                     }
                     BytesReader br = new BytesReader(buffer, 0, read_bytes);
                     //协议版本

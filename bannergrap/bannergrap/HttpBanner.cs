@@ -8,9 +8,8 @@ namespace bannergrap
 {
     class HttpBanner :BannerBase
     {
-        public string response_headers;
-        public string cookies;
-        public byte[] body_raw;
+        public IDictionary<string, string> headers;
+        public byte[] body_data;
         public string body_text;
 
         public HttpBanner(UInt32 ip, UInt16 port) : base(ip, port,"HTTP")
@@ -20,7 +19,7 @@ namespace bannergrap
 
         public override string ToString()
         {
-            return base.ToString() + response_headers + cookies;
+            return base.ToString();
         }
     }
 }

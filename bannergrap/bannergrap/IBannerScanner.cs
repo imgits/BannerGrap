@@ -8,6 +8,6 @@ namespace bannergrap
 {
     interface IBannerScanner
     {
-
+        BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout);
     }
 }

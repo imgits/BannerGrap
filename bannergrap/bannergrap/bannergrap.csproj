@@ -64,8 +64,11 @@
     <Compile Include="FtpBanner.cs" />
     <Compile Include="FtpScanner.cs" />
     <Compile Include="HttpBanner.cs" />
-    <Compile Include="HttpScanner.cs" />
-    <Compile Include="HttpsScanne.cs">
+    <Compile Include="HttpsBanner.cs" />
+    <Compile Include="HttpScanner.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="HttpsScanner.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="IBannerScanner.cs" />
@@ -78,6 +81,7 @@
     <Compile Include="BannerScanner.cs" />
     <Compile Include="SshBanner.cs" />
     <Compile Include="SshScanner.cs" />
+    <Compile Include="TcpBanner.cs" />
     <Compile Include="TcpScanner.cs" />
     <Compile Include="TelnetBanner.cs" />
     <Compile Include="TelnetScanner.cs" />

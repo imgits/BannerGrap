@@ -8,7 +8,9 @@ namespace bannergrap
 {
     class FtpBanner : BannerBase
     {
-        public bool  anonymous;
+        public string status_description;
+        public string welcome_message;
+        public bool anonymous;
         public FtpBanner(UInt32 ip, UInt16 port) : base(ip,port,"FTP")
         {
 

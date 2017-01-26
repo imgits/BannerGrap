@@ -8,7 +8,8 @@ namespace bannergrap
 {
     class TelnetBanner : BannerBase
     {
-        public string Welcome;
+        public byte[] data;
+        public string text;
 
         public TelnetBanner(UInt32 ip, UInt16 port) : base(ip, port,"telnet")
         {
@@ -17,7 +18,7 @@ namespace bannergrap
 
         public override string ToString()
         {
-            return base.ToString() + "\r\n" + Welcome;
+            return base.ToString() + "\r\n" + text;
         }
     }
 }

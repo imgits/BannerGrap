@@ -8,17 +8,14 @@ using System.Net;
 
 namespace bannergrap
 {
-    class FtpScanner : IDisposable
+    class FtpScanner : IBannerScanner , IDisposable
     {
-        FtpWebResponse FtpResponse = null;
-        FtpBanner banner = null;
-        public FtpBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
+        public BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
-            banner = new FtpBanner(ip, port);
             string url = "ftp://" + IPHelper.ntoa(ip) + "/";
+            FtpWebResponse FtpResponse = null;
             try
             {
-                Dispose();
                 FtpWebRequest ftp = (FtpWebRequest)FtpWebRequest.Create(new Uri(url));
                 ftp.UseBinary = true;
                 ftp.Credentials = new NetworkCredential("anonymous", "janeDoe@contoso.com");
@@ -33,8 +30,13 @@ namespace bannergrap
             }
             catch (Exception ex) { }
             if (FtpResponse == null) return null;
-            banner.text = FtpResponse.BannerMessage;
-            switch(FtpResponse.StatusCode)
+
+            FtpBanner banner = new FtpBanner(ip, port);
+            banner.banner_text = FtpResponse.BannerMessage;
+            banner.status_description = FtpResponse.StatusDescription;
+            banner.welcome_message = FtpResponse.WelcomeMessage;
+
+            switch (FtpResponse.StatusCode)
             {
                 case FtpStatusCode.DataAlreadyOpen:
                 case FtpStatusCode.OpeningData:
@@ -44,17 +46,12 @@ namespace bannergrap
                     banner.anonymous = false;
                     break;
             }
-            banner.text += FtpResponse.StatusDescription + FtpResponse.WelcomeMessage;
+            FtpResponse.Close();
             return banner;
         }
 
         public void Dispose()
         {
-            if (FtpResponse!=null)
-            {
-                FtpResponse.Close();
-                FtpResponse = null;
-            }
         }
     }
 }
