@@ -14,7 +14,6 @@ namespace bannergrap
         FtpBanner banner = null;
         public FtpBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
-            //ip = IPHelper.aton("1.53.59.39");
             banner = new FtpBanner(ip, port);
             string url = "ftp://" + IPHelper.ntoa(ip) + "/";
             try
@@ -28,17 +27,13 @@ namespace bannergrap
                 ftp.ReadWriteTimeout = timeout;
                 FtpResponse = (FtpWebResponse)ftp.GetResponse();
             }
-            catch(WebException ex)
+            catch (WebException ex)
             {
                 FtpResponse = (FtpWebResponse)ex.Response;
-                
             }
-            catch (Exception ex)
-            {
-                
-            }
+            catch (Exception ex) { }
             if (FtpResponse == null) return null;
-            banner.welcome = FtpResponse.BannerMessage;
+            banner.text = FtpResponse.BannerMessage;
             switch(FtpResponse.StatusCode)
             {
                 case FtpStatusCode.DataAlreadyOpen:
@@ -49,7 +44,7 @@ namespace bannergrap
                     banner.anonymous = false;
                     break;
             }
-            banner.message = FtpResponse.StatusDescription + FtpResponse.WelcomeMessage;
+            banner.text += FtpResponse.StatusDescription + FtpResponse.WelcomeMessage;
             return banner;
         }
 

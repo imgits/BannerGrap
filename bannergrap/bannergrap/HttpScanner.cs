@@ -14,18 +14,10 @@ namespace bannergrap
     class HttpScanner : IDisposable
     {
         HttpWebResponse HttpResponse = null;
-        public bool Connect(UInt32 ip, UInt16 port, int timeout, bool is_https=false)
+        HttpBanner banner = null;
+        public HttpBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
-            string url = null;
-            if (is_https)
-            {
-                url = "https://" + IPHelper.ntoa(ip) + ":" + port + "/";
-                ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-            }
-            else
-            {
-                url = "http://" + IPHelper.ntoa(ip) + ":" + port + "/";
-            }
+            string url = "http://" + IPHelper.ntoa(ip) + ":" + port + "/";
             try
             {
                 Dispose();
@@ -34,40 +26,26 @@ namespace bannergrap
                 request.Method = "GET";
                 request.Timeout = timeout;
                 request.ReadWriteTimeout = timeout;
-                request.CookieContainer = new CookieContainer();
+                //request.CookieContainer = new CookieContainer();
                 HttpResponse = (HttpWebResponse)request.GetResponse();
-                return true;
             }
             catch (WebException ex)
             {
-                if (ex.Status == WebExceptionStatus.ProtocolError && ex.Response != null)
-                {
-                    HttpResponse = (HttpWebResponse)ex.Response;
-                    return true;
-                }
+                HttpResponse = (HttpWebResponse)ex.Response;
             }
-            catch (InvalidOperationException ex)
-            {
-
-            }
-            catch (Exception ex)
-            {
-            }
-            return false;
-        }
-
-        public string GetBanner(int timeout)
-        {
-
-            StringBuilder banner = new StringBuilder();
+            catch (Exception ex) { }
+            if (HttpResponse == null) return null;
+            
             foreach (string name in HttpResponse.Headers.AllKeys)
             {
-                banner.Append(name + ": " + HttpResponse.Headers[name] + "\r\n");
-            }
-            if (HttpResponse.Cookies.Count > 0) banner.Append("Set-Cookies:\r\n");
-            foreach (Cookie cookie in HttpResponse.Cookies)
-            {
-                banner.Append(cookie.Name + "=" + cookie.Value + ";\r\n");
+                if (name.ToLower() == "set-cookies")
+                {
+                    banner.cookies =  name + ": " + HttpResponse.Headers[name];
+                }
+                else
+                {
+                    banner.response_headers += name + ": " + HttpResponse.Headers[name] + "\r\n";
+                }
             }
             try
             {
@@ -81,20 +59,10 @@ namespace bannergrap
                     ResponseStream = new DeflateStream(ResponseStream, CompressionMode.Decompress);
                 }
                 Encoding encoding = Encoding.UTF8;
-                if (HttpResponse.CharacterSet != null)
-                {
-                    //encoding = Encoding.GetEncoding(HttpResponse.CharacterSet);
-                    banner.Append("HttpResponse.CharacterSet=" + HttpResponse.CharacterSet + "\n");
-                }
-                else
-                {
-                    //encoding = Encoding.UTF8;
-                    banner.Append("HttpResponse.CharacterSet=null\n");
-                }
                 using (System.IO.StreamReader reader = new System.IO.StreamReader(ResponseStream, encoding))
                 {
-                    string body = reader.ReadToEnd();
-                    banner.Append(body);
+                    //string body = reader...ReadToEnd();
+                    //banner.Append(body);
                 }
             }
             catch (Exception ex)

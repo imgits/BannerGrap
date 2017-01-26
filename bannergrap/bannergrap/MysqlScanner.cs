@@ -48,10 +48,26 @@ namespace bannergrap
         public string error_message { get; set; }//Zero-terminated text of the error message.
     }
 
-    class MysqlClient : TcpScanner
+    class MysqlScanner : TcpScanner
     {
-        override public string GetBanner(int timeout)
+        static public void Scan(UInt32 ip, UInt16 port, int timeout)
         {
+            using (MysqlScanner scanner = new MysqlScanner())
+            {
+                MysqlBanner banner = scanner.GetBanner(ip, port, timeout);
+                if (banner!=null)
+                {
+
+                }
+            }
+        }
+        MysqlBanner banner = null;
+        public new MysqlBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
+        {
+            if (!Connect(ip, port, timeout)) return null;
+
+            banner = new MysqlBanner(ip, port);
+
             this.ReceiveTimeout = timeout;
             using (NetworkStream ns = GetStream())
             {
@@ -74,15 +90,19 @@ namespace bannergrap
                         if (size <= 0) break;
                         read_bytes += size;
                     }
+                    if (read_bytes > 0)
+                    {
+                        banner.raw_data = new byte[read_bytes];
+                        Buffer.BlockCopy(buffer, 0, banner.raw_data, 0, read_bytes);
+                    }
                     BytesReader br = new BytesReader(buffer, 0, read_bytes);
                     //协议版本
                     byte protocol_version = br.ReadByte();
-                    string banner = null;
                     switch(protocol_version)
                     {
-                        case 9:     banner = DecodeHandshakeV9(br);break;
-                        case 10:    banner = DecodeHandshakeV10(br);break;
-                        case 0xff:  banner = DecodeError40(br); break;
+                        case 9:     DecodeHandshakeV9(br);break;
+                        case 10:    DecodeHandshakeV10(br);break;
+                        case 0xff:  DecodeError40(br); break;
                         default:
                             break;
                     }
@@ -96,84 +116,67 @@ namespace bannergrap
         }
 
         //https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::HandshakeV9
-        string DecodeHandshakeV9(BytesReader br)
+        void DecodeHandshakeV9(BytesReader br)
         {
-            StringBuilder banner = new StringBuilder();
-            banner.Append("mysql protocol v9;");
             try
             {
-                MysqlHandshakeV9 packet = new MysqlHandshakeV9();
-                packet.protocol_version = 9;
-                packet.server_version = br.ReadString();
-                banner.Append("server_version:" + packet.server_version + ";");
-                packet.connection_id = br.ReadUint32();
-                packet.auth_plugin_data = br.ReadString();
-                banner.Append("auth_plugin_data:" + packet.auth_plugin_data +";");
+                banner.protocol_version = 9;
+                banner.server_version = br.ReadString();
+                UInt32 connection_id = br.ReadUint32();
+                banner.auth_plugin_name = br.ReadString();
             }                                                                                                                                                     
             catch(Exception ex)
             {
             }
-            return banner.ToString();
         }
 
         //https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::Handshake
-        string DecodeHandshakeV10(BytesReader br)
+        void DecodeHandshakeV10(BytesReader br)
         {
             const int CLIENT_PLUGIN_AUTH = 0x00080000;
             const int CLIENT_SECURE_CONNECTION = 0x00008000;
-            StringBuilder banner = new StringBuilder();
-            banner.Append("mysql protocol v10;");
             try
             {
-                MysqlHandshakeV10 packet = new MysqlHandshakeV10();
-                packet.protocol_version = 10;
-                packet.server_version = br.ReadString();
-                banner.Append("server_version:" + packet.server_version + ";");
-                packet.connection_id = br.ReadUint32();
-                packet.auth_plugin_data_part_1 = br.ReadBytes(8);
-                packet.filler_1 = br.ReadByte();
-                packet.capability_flag_1 = br.ReadUint16();
+                banner.protocol_version = 10;
+                banner.server_version = br.ReadString();
+                UInt32 connection_id = br.ReadUint32();
+                br.skip(8);//auth_plugin_data_part_1
+                br.skip(1);//filler_1 = br.ReadByte();
+                UInt32 capability_flag_1 = br.ReadUint16();
+                br.skip(1);//packet.character_set = br.ReadByte();
+                br.skip(2);//packet.status_flags = br.ReadUint16();
+                UInt32 capability_flags_2 = br.ReadUint16();
 
-                packet.character_set = br.ReadByte();
-                packet.status_flags = br.ReadUint16();
-                packet.capability_flags_2 = br.ReadUint16();
-
-                UInt32 capability = (packet.capability_flags_2 << 16) + packet.capability_flag_1;
+                UInt32 capability = (capability_flags_2 << 16) + capability_flag_1;
                 if ( (capability&CLIENT_PLUGIN_AUTH) !=0)
                 {
 
                 }
-                packet.auth_plugin_data_len = br.ReadByte();
-                br.ReadBytes(10);
+                int auth_plugin_data_len = br.ReadByte();
+                br.skip(10);//filler
                 if ((capability & CLIENT_SECURE_CONNECTION) != 0)
                 {
-                    int auth_plugin_data_2_len = Math.Max(13, packet.auth_plugin_data_len - 8);
-                    packet.auth_plugin_data_part_2 = br.ReadBytes(auth_plugin_data_2_len);
+                    int auth_plugin_data_2_len = Math.Max(13, auth_plugin_data_len - 8);
+                    br.skip(auth_plugin_data_2_len);//packet.auth_plugin_data_part_2 = br.ReadBytes(auth_plugin_data_2_len);
                 }
-                packet.auth_plugin_name = br.ReadString();
+                banner.auth_plugin_name = br.ReadString();
             }
             catch(Exception ex)
             {
 
             }
-            return banner.ToString();
         }
 
         //https://dev.mysql.com/doc/internals/en/packet-ERR_Packet.html
-        string DecodeError40(BytesReader br)
+        void DecodeError40(BytesReader br)
         {
-            StringBuilder banner = new StringBuilder();
-            banner.Append("mysql error;");
             try
             {
-                MysqlError40 packet = new MysqlError40();
-                packet.marker = 0xff;
-                packet.error_code = br.ReadUint16();
-                packet.error_message = br.ReadString();
-                banner.Append(packet.error_message);
+                banner.protocol_version = -1;
+                banner.error_code = (int)br.ReadUint16();
+                banner.error_message = br.ReadString();
             }
             catch (Exception ex) { }
-            return banner.ToString();
         }
 
      }

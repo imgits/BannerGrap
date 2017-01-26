@@ -117,5 +117,10 @@ namespace bannergrap
             }
             throw new IndexOutOfRangeException("BytesReader index out of range");
         }
+
+        public void skip(int size)
+        {
+            this.read_pos += size;
+        }
     }
 }

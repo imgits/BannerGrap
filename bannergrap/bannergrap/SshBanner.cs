@@ -21,7 +21,7 @@ namespace bannergrap
         public int KeyLength;
         public byte[] HostKey;
         public byte[] FingerPrint;
-        public SshBanner(UInt32 ip, UInt16 port) : base(ip,port)
+        public SshBanner(UInt32 ip, UInt16 port) : base(ip,port,"SSH")
         {
             
         }

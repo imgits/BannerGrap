@@ -28,8 +28,6 @@ namespace bannergrap
             ConnectionInfo ci = client.ConnectionInfo;
             if (ci.ServerVersion != null)
             {
-                Console.WriteLine(host + ":" + port + " opened");
-
                 banner.CompressionAlgorithms.AddRange(ci.CompressionAlgorithms.Keys);
                 banner.KeyExchangeAlgorithms.AddRange(ci.KeyExchangeAlgorithms.Keys);
                 banner.EncryptionAlgorithms.AddRange(ci.Encryptions.Keys);
@@ -37,16 +35,16 @@ namespace bannergrap
                 banner.HostKeyAlgorithmsAlgorithms.AddRange(ci.HostKeyAlgorithms.Keys);
                 
                 banner.ServerVersion = ci.ServerVersion;
-                banner.message = "";
             }
             else
             {
-                Console.WriteLine(host + ":" + port + " closed");
+                banner = null;
             }
             client.Disconnect();
             return banner;
         }
 
+        //接受公钥
         void OnHostKeyReceived(Object sender,Renci.SshNet.Common.HostKeyEventArgs args)
         {
             banner.HostKeyName = args.HostKeyName;
@@ -57,7 +55,7 @@ namespace bannergrap
 
         public void Dispose()
         {
-            
+            banner = null;
         }
     }
 }

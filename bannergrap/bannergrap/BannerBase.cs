@@ -16,17 +16,22 @@ namespace bannergrap
         public UInt32   ip;
         public UInt16   port;
         public string   ip_str;
-        public BannerBase(UInt32 ip, UInt16 port)
+        public string server_name;
+        public byte[]   raw_data;
+        public string   text;
+        
+        public BannerBase(UInt32 ip, UInt16 port, string server_name)
         {
             this.ip = ip;
             this.port = port;
             this.grap_time = DateTime.Now;
             this.ip_str = IPHelper.ntoa(ip);
+            this.server_name = server_name;
         }
 
         virtual public string ToString()
         {
-            return grap_time.ToLongDateString() + " " + ip_str + ":" + port;
+            return grap_time.ToLongDateString() + " " + ip_str + ":" + port + "\n" + text;
         }
     }
 }

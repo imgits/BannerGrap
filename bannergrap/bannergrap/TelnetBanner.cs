@@ -10,14 +10,14 @@ namespace bannergrap
     {
         public string Welcome;
 
-        public TelnetBanner(UInt32 ip, UInt16 port) : base(ip, port)
+        public TelnetBanner(UInt32 ip, UInt16 port) : base(ip, port,"telnet")
         {
 
         }
 
         public override string ToString()
         {
-            return base.ToString();
+            return base.ToString() + "\r\n" + Welcome;
         }
     }
 }

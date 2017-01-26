@@ -63,13 +63,16 @@
     <Compile Include="ByteStream.cs" />
     <Compile Include="FtpBanner.cs" />
     <Compile Include="FtpScanner.cs" />
+    <Compile Include="HttpBanner.cs" />
     <Compile Include="HttpScanner.cs" />
     <Compile Include="HttpsScanne.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="IBannerScanner.cs" />
     <Compile Include="IPHelper.cs" />
     <Compile Include="IPList.cs" />
-    <Compile Include="MysqlClient.cs" />
+    <Compile Include="MysqlBanner.cs" />
+    <Compile Include="MysqlScanner.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BannerScanner.cs" />

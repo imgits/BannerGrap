@@ -10,36 +10,44 @@ namespace bannergrap
 {
     class TcpScanner : TcpClient
     {
-        virtual public bool Connect(UInt32 ip, UInt16 port, int timeout)
+        BannerBase banner = null;
+        protected bool Connect(UInt32 ip, UInt16 port, int timeout)
         {
-            //ip = 0x7f000001;
             IPAddress hostname = IPHelper.AddressH(ip);
-            
-            var result = BeginConnect(hostname, port, null, null);
-            result.AsyncWaitHandle.WaitOne(timeout);
-            return (result.IsCompleted && Connected);
+            try
+            {
+                var result = BeginConnect(hostname, port, null, null);
+                result.AsyncWaitHandle.WaitOne(timeout);
+                return (result.IsCompleted && Connected);
+            }
+            catch (Exception ex) { }
+            return false;
         }
 
-        virtual public string GetBanner(int timeout)
+        public BannerBase GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
-            this.ReceiveTimeout = timeout;
-            using (NetworkStream ns = GetStream())
+            if (!Connect(ip, port, timeout)) return null;
+            IPAddress hostname = IPHelper.AddressH(ip);
+            banner = new BannerBase(ip, port,"TCP");
+            try
             {
-                try
+                this.ReceiveTimeout = timeout;
+                using (NetworkStream ns = GetStream())
                 {
                     byte[] buffer = new byte[1024 * 16];
                     int size = ns.Read(buffer, 0, buffer.Length);
                     if (size > 0)
                     {
-                        string banner = Encoding.ASCII.GetString(buffer, 0, size);
-                        return banner;
+                        banner.raw_data = new byte[size];
+                        Buffer.BlockCopy(buffer, 0, banner.raw_data, 0, size);
+                        banner.text = Encoding.ASCII.GetString(buffer, 0, size);
                     }
                 }
-                catch (Exception ex)
-                {
-                }
             }
-            return null;
+            catch (Exception ex)
+            {
+            }
+            return banner;
         }
     }
 }
