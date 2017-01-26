@@ -82,9 +82,9 @@ namespace bannergrap
                 {
                     //case 21:    FtpScan(item.ip, item.port);    break;
                     //case 22:    SshScan(item.ip, item.port);    break;
-                    case 23:    TelnetScan(item.ip, item.port); break;
+                    //case 23:    TelnetScan(item.ip, item.port); break;
                     //case 25:    SmtpScan(item.ip, item.port);   break;
-                    //case 80:    HttpScan(item.ip, item.port);   break;
+                    case 80:    HttpScan(item.ip, item.port);   break;
                     //case 110:   Pop3Scan(item.ip, item.port);   break;
                     //case 443:   HttpsScan(item.ip, item.port);  break;
                     //case 3306:  MysqlScan(item.ip, item.port); break;
@@ -176,9 +176,11 @@ namespace bannergrap
             //TcpScan(ip, port);
             using (HttpScanner scanner = new HttpScanner())
             {
-                if (scanner.Connect(ip, port, Timeout))
+                HttpBanner banner = scanner.GetBanner(ip, port, Timeout);
+                if (banner != null)
                 {
-                    string banner = scanner.GetBanner(Timeout);
+                    banner.task_id = task_id;
+                    //table_ssh.InsertOneAsync(banner);
                     OutputBanner(ip, port, banner);
                 }
             }
@@ -193,11 +195,11 @@ namespace bannergrap
         {
             using (HttpScanner scanner = new HttpScanner())
             {
-                if (scanner.Connect(ip, port, Timeout,true))
-                {
-                    string banner = scanner.GetBanner(Timeout);
-                    OutputBanner(ip, port, banner);
-                }
+                //if (scanner.Connect(ip, port, Timeout,true))
+                //{
+                //    string banner = scanner.GetBanner(Timeout);
+                //    OutputBanner(ip, port, banner);
+                //}
             }
         }
         void MysqlScan(UInt32 ip, UInt16 port)

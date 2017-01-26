@@ -11,13 +11,54 @@ using System.Text.RegularExpressions;
 
 namespace bannergrap
 {
-    class HttpScanner : IDisposable
+    class HttpScanner : WebClient
     {
         HttpWebResponse HttpResponse = null;
         HttpBanner banner = null;
+        int timeout = 1000;
         public HttpBanner GetBanner(UInt32 ip, UInt16 port, int timeout)
         {
-            string url = "http://" + IPHelper.ntoa(ip) + ":" + port + "/";
+            //string url = "http://" + IPHelper.ntoa(ip) + ":" + port + "/";
+            string url = "http://192.168.1.1:80/";
+            this.timeout = timeout;
+            byte[] body = null;
+            try
+            {
+                body = DownloadData(url);
+            }
+            catch (Exception ex)
+            {
+
+            }
+            banner = new HttpBanner(ip, port);
+            banner.raw_data = body;
+            foreach (string name in HttpResponse.Headers.AllKeys)
+            {
+                if (name.ToLower() == "set-cookie")
+                {
+                    banner.cookies = name + ": " + HttpResponse.Headers[name];
+                }
+                else
+                {
+                    banner.response_headers += name + ": " + HttpResponse.Headers[name] + "\r\n";
+                }
+            }
+            return banner;
+
+        }
+
+        protected override WebRequest GetWebRequest(Uri address)
+        {
+            HttpWebRequest request = (HttpWebRequest)base.GetWebRequest(address);
+            request.Timeout = timeout;
+            request.ReadWriteTimeout = timeout;
+            return request;
+        }
+
+        public HttpBanner GetBanner1(UInt32 ip, UInt16 port, int timeout)
+        {
+            //string url = "http://" + IPHelper.ntoa(ip) + ":" + port + "/";
+            string url = "http://192.168.1.1:80/";
             try
             {
                 Dispose();
@@ -35,10 +76,10 @@ namespace bannergrap
             }
             catch (Exception ex) { }
             if (HttpResponse == null) return null;
-            
+            banner = new HttpBanner(ip, port);
             foreach (string name in HttpResponse.Headers.AllKeys)
             {
-                if (name.ToLower() == "set-cookies")
+                if (name.ToLower() == "set-cookie")
                 {
                     banner.cookies =  name + ": " + HttpResponse.Headers[name];
                 }
@@ -47,9 +88,10 @@ namespace bannergrap
                     banner.response_headers += name + ": " + HttpResponse.Headers[name] + "\r\n";
                 }
             }
+            Stream ResponseStream = null;
             try
             {
-                Stream ResponseStream = HttpResponse.GetResponseStream();
+                ResponseStream = HttpResponse.GetResponseStream();
                 if (HttpResponse.ContentEncoding.ToLower().Contains("gzip"))
                 {
                     ResponseStream = new GZipStream(ResponseStream, CompressionMode.Decompress);
@@ -58,18 +100,23 @@ namespace bannergrap
                 {
                     ResponseStream = new DeflateStream(ResponseStream, CompressionMode.Decompress);
                 }
-                Encoding encoding = Encoding.UTF8;
-                using (System.IO.StreamReader reader = new System.IO.StreamReader(ResponseStream, encoding))
+                int read_bytes = 0;
+                byte[] buffer = new byte[ResponseStream.Length];
+                while(read_bytes < ResponseStream.Length)
                 {
-                    //string body = reader...ReadToEnd();
-                    //banner.Append(body);
+                    int size = ResponseStream.Read(buffer, read_bytes, (int)ResponseStream.Length - read_bytes);
+                    if (size <= 0) break;
+                    read_bytes += size;
                 }
+                banner.body_raw = buffer;
+                banner.body_text = Encoding.UTF8.GetString(buffer, 0, read_bytes);
             }
             catch (Exception ex)
             {
-                banner.Append(ex.Message);
+                
             }
-            return banner.ToString();
+            if (ResponseStream != null) ResponseStream.Close();
+            return banner;
         }
 
         public void Dispose()

@@ -20,7 +20,7 @@ namespace bannergrap
 
         public override string ToString()
         {
-            return base.ToString();
+            return base.ToString() + response_headers + cookies;
         }
     }
 }
